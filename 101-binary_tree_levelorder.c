@@ -1,77 +1,122 @@
 #include "binary_trees.h"
 
-/**
- * push - subroutine to push new nodes from traversal onto fifo queue
- * @head: pointer to head of fifo
- * @tail: pointer to tail of fifo
- * @node: node to add to queue
- */
-void push(fifo_t **head, fifo_t **tail, const binary_tree_t *node)
-{
-	fifo_t *new;
-
-	if (head == NULL || node == NULL)
-		return;
-	new = malloc(sizeof(fifo_t));
-	if (new == NULL)
-		return;
-	new->node = node;
-	new->next = *head;
-	new->prev = NULL;
-	if (*head == NULL)
-		*tail = new;
-	else
-		(*head)->prev = new;
-	*head = new;
-}
+levelorder_queue_t *create_node(binary_tree_t *node);
+void free_queue(levelorder_queue_t *head);
+void pint_push(binary_tree_t *node, levelorder_queue_t *head,
+		levelorder_queue_t **tail, void (*func)(int));
+void pop(levelorder_queue_t **head);
+void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int));
 
 /**
- * pop - subroutine to pop nodes from the tail of a fifo queue
- * @head: pointer to head of queue
- * @tail: pointer to tail of queue
+ * create_node - Creates a new levelorder_queue_t node.
+ * @node: The binary tree node for the new node to contain.
  *
- * Return: pointer to popped node, or NULL if it does not exist
+ * Return: If an error occurs, NULL.
+ *         Otherwise, a pointer to the new node.
  */
-const binary_tree_t *pop(fifo_t **head, fifo_t **tail)
+levelorder_queue_t *create_node(binary_tree_t *node)
 {
-	fifo_t *last;
-	binary_tree_t *node;
+	levelorder_queue_t *new;
 
-	if (tail == NULL || *tail == NULL)
+	new = malloc(sizeof(levelorder_queue_t));
+	if (new == NULL)
 		return (NULL);
-	last = *tail;
-	*tail = (*tail)->prev;
-	if (*tail == NULL)
-		*head = NULL;
-	else
-		(*tail)->next = NULL;
-	node = (binary_tree_t *) last->node;
-	free(last);
-	return ((const binary_tree_t *) node);
+
+	new->node = node;
+	new->next = NULL;
+
+	return (new);
 }
 
 /**
- * binary_tree_levelorder - level-order binary tree traversal
- * @tree: root of tree to traverse
- * @func: function to call on values of visited nodes
+ * free_queue - Frees a levelorder_queue_t queue.
+ * @head: A pointer to the head of the queue.
+ */
+void free_queue(levelorder_queue_t *head)
+{
+	levelorder_queue_t *tmp;
+
+	while (head != NULL)
+	{
+		tmp = head->next;
+		free(head);
+		head = tmp;
+	}
+}
+
+/**
+ * pint_push - Runs a function on a given binary tree node and
+ *             pushes its children into a levelorder_queue_t queue.
+ * @node: The binary tree node to print and push.
+ * @head: A double pointer to the head of the queue.
+ * @tail: A double pointer to the tail of the queue.
+ * @func: A pointer to the function to call on @node.
+ *
+ * Description: Upon malloc failure, exits with a status code of 1.
+ */
+void pint_push(binary_tree_t *node, levelorder_queue_t *head,
+		levelorder_queue_t **tail, void (*func)(int))
+{
+	levelorder_queue_t *new;
+
+	func(node->n);
+	if (node->left != NULL)
+	{
+		new = create_node(node->left);
+		if (new == NULL)
+		{
+			free_queue(head);
+			exit(1);
+		}
+		(*tail)->next = new;
+		*tail = new;
+	}
+	if (node->right != NULL)
+	{
+		new = create_node(node->right);
+		if (new == NULL)
+		{
+			free_queue(head);
+			exit(1);
+		}
+		(*tail)->next = new;
+		*tail = new;
+	}
+}
+
+/**
+ * pop - Pops the head of a levelorder_queue_t queue.
+ * @head: A double pointer to the head of the queue.
+ */
+void pop(levelorder_queue_t **head)
+{
+	levelorder_queue_t *tmp;
+
+	tmp = (*head)->next;
+	free(*head);
+	*head = tmp;
+}
+
+/**
+ * binary_tree_levelorder - Traverses a binary tree using
+ *                          level-order traversal.
+ * @tree: A pointer to the root node of the tree to traverse.
+ * @func: A pointer to a function to call for each node.
  */
 void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int))
 {
-	fifo_t *head, *tail;
-	binary_tree_t *node;
+	levelorder_queue_t *head, *tail;
 
-	head = tail = NULL;
 	if (tree == NULL || func == NULL)
 		return;
-	push(&head, &tail, tree);
-	while (head)
+
+	head = tail = create_node((binary_tree_t *)tree);
+	if (head == NULL)
+		return;
+
+	while (head != NULL)
 	{
-		node = (binary_tree_t *) pop(&head, &tail);
-		if (node)
-		{
-			push(&head, &tail, (const binary_tree_t *) node->left);
-			push(&head, &tail, (const binary_tree_t *) node->right);
-			func(node->n);
-		}
+		pint_push(head->node, head, &tail, func);
+		pop(&head);
 	}
 }

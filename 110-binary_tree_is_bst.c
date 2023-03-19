@@ -1,55 +1,35 @@
 #include "binary_trees.h"
+#include "limits.h"
 
 /**
- * bst_compare_right - check that all right nodes have a value greater
- * than `start_val`.
- * @tree: node to start comparison
- * @start: value to compare to
+ * is_bst_helper - Checks if a binary tree is a valid binary search tree.
+ * @tree: A pointer to the root node of the tree to check.
+ * @lo: The value of the smallest node visited thus far.
+ * @hi: The value of the largest node visited this far.
  *
- * Return: 1 if all right nodes are greater than `start_val`, 0 otherwise
+ * Return: If the tree is a valid BST, 1, otherwise, 0.
  */
-int bst_compare_right(const binary_tree_t *tree, int start)
+int is_bst_helper(const binary_tree_t *tree, int lo, int hi)
 {
-	if (tree == NULL)
-		return (1);
-	if (tree->n > start)
-		return (bst_compare_right(tree->right, start)
-			&& bst_compare_right(tree->left, start));
-	return (0);
+	if (tree != NULL)
+	{
+		if (tree->n < lo || tree->n > hi)
+			return (0);
+		return (is_bst_helper(tree->left, lo, tree->n - 1) &&
+			is_bst_helper(tree->right, tree->n + 1, hi));
+	}
+	return (1);
 }
 
 /**
- * bst_compare_left - check that all left nodes have a value less
- * than `start_val`.
- * @tree: node to start comparison
- * @start: value to compare to
+ * binary_tree_is_bst - Checks if a binary tree is a valid binary search tree.
+ * @tree: A pointer to the root node of the tree to check.
  *
- * Return: 1 if all left nodes are less than `start_val`, 0 otherwise
- */
-int bst_compare_left(const binary_tree_t *tree, int start)
-{
-	if (tree == NULL)
-		return (1);
-	if (tree->n < start)
-		return (bst_compare_left(tree->left, start)
-			&& bst_compare_left(tree->right, start));
-	return (0);
-}
-
-/**
- * binary_tree_is_bst - check if binary tree is a valid binary search tree
- * @tree: root of tree to check
- * Return: 1 if true, 0 otherwise
+ * Return: 1 if tree is a valid BST, and 0 otherwise
  */
 int binary_tree_is_bst(const binary_tree_t *tree)
 {
 	if (tree == NULL)
 		return (0);
-	if (bst_compare_left(tree->left, tree->n)
-		&& bst_compare_right(tree->right, tree->n))
-		return ((tree->left == NULL
-			 || binary_tree_is_bst(tree->left))
-			&& (tree->right == NULL
-				|| binary_tree_is_bst(tree->right)));
-	return (0);
+	return (is_bst_helper(tree, INT_MIN, INT_MAX));
 }
